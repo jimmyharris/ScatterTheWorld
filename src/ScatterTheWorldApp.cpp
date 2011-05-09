@@ -12,6 +12,10 @@
 #include "XnVMultiProcessFlowClient.h"
 #include <XnVWaveDetector.h>
 
+#include "ErrorChecking.h"
+
+#define KINECT_WIDTH 640
+#define KINECT_HEIGHT 480
 #define WIDTH 640
 #define HEIGHT 480
 
@@ -19,26 +23,10 @@ using namespace ci;
 using namespace ci::app;
 using namespace std;
 
-Vec3f handCoords;
+XnPoint3D perspectivePoint;
+Vec2f handCoords;
+xn::DepthGenerator pDepthGen;
 
-
-//----------------------------
-// Macros
-//----------------------------
-#define CHECK_RC(rc, what)                               \
-if (rc != XN_STATUS_OK)                                  \
-{                                                        \
-  printf("%s failed: %s\n", what, xnGetStatusString(rc));\
-  shutdown();                                             \
-}
-#define CHECK_ERRORS(rc, errors, what)  \
-if (rc == XN_STATUS_NO_NODE_PRESENT)	\
-{										\
-	XnChar strError[1024];              \
-	errors.ToString(strError, 1024);	\
-	printf("%s\n", strError);			\
-	shutdown();						    \
-}
 
 //----------------------------
 // Image Sources
@@ -104,11 +92,6 @@ class ImageSourceKinectDepth : public ImageSource
 
     ~ImageSourceKinectDepth()
     {
-      // mData is actually a ref. It's released from the device.
-      /*if( mData ) {
-        delete[] mData;
-        mData = NULL;
-        }*/
     }
 
     virtual void load( ImageTargetRef target )
@@ -140,7 +123,8 @@ void XN_CALLBACK_TYPE SessionStart(const XnPoint3D& ptFocusPoint, void* UserCxt)
 // Callback for session end
 void XN_CALLBACK_TYPE SessionEnd(void* UserCxt)
 {
-  handCoords = Vec3f(0.0f,0.0f,0.0f);
+  //handCoords = Vec3f(0.0f,0.0f,0.0f);
+  handCoords = Vec2f(0.0f,0.0f);
   printf("Session ended. Please perform focus gesture to start session\n");
 }
 // Callback for wave detection
@@ -151,8 +135,10 @@ void XN_CALLBACK_TYPE OnWaveCB(void* cxt)
 // callback for a new position of any hand
 void XN_CALLBACK_TYPE OnPointUpdate(const XnVHandPointContext* pContext, void* cxt)
 {
-  handCoords = Vec3f(pContext->ptPosition.X + WIDTH/2, -pContext->ptPosition.Y + HEIGHT/2, -pContext->ptPosition.Z);
-  printf("%d: (%f,%f,%f) [%f]\n", pContext->nID, pContext->ptPosition.X, pContext->ptPosition.Y, pContext->ptPosition.Z, pContext->fTime);
+  perspectivePoint = pContext->ptPosition;
+  pDepthGen.ConvertRealWorldToProjective(1, &perspectivePoint, &perspectivePoint);
+  handCoords = Vec2f(perspectivePoint.X, perspectivePoint.Y);
+  printf("%d: (%f,%f,%f) [%f]\n", pContext->nID, handCoords.x, handCoords.y, perspectivePoint.Z, pContext->fTime);
 }
 
 class ScatterTheWorldApp : public AppBasic {
@@ -171,12 +157,14 @@ class ScatterTheWorldApp : public AppBasic {
     XnBool bRemoting;
     XnVWaveDetector wc;
     gl::Texture colorTexture;
+  
     ImageSourceRef getColorImage(){
       //Get an ImageRef from the Active MetaData
       xn::ImageMetaData metaData;
       pImageGen.GetMetaData(metaData);
       return ImageSourceRef( new ImageSourceKinectColor(metaData));
     }
+  
 };
 
 void ScatterTheWorldApp::prepareSettings(Settings* settings)
@@ -187,7 +175,8 @@ void ScatterTheWorldApp::prepareSettings(Settings* settings)
 void ScatterTheWorldApp::setup()
 {
   bRemoting = FALSE;
-  xn::EnumerationErrors errors; 
+  pSessionGenerator = NULL;
+  xn::EnumerationErrors errors;
   XnStatus rc = context.InitFromXmlFile(getResourcePath("ScatterTheWorld.xml").c_str(),&errors);
   CHECK_ERRORS(rc,errors,"InitFromXmlFile")
   CHECK_RC(rc,"XML Config")
@@ -198,6 +187,8 @@ void ScatterTheWorldApp::setup()
 
   rc = context.FindExistingNode(XN_NODE_TYPE_IMAGE,pImageGen);
   CHECK_RC(rc,"Find Image Generator.")
+  rc = context.FindExistingNode(XN_NODE_TYPE_DEPTH,pDepthGen);
+  CHECK_RC(rc,"Find Depth Generator.")
 
   context.StartGeneratingAll();
 
@@ -231,9 +222,9 @@ void ScatterTheWorldApp::draw()
   gl::clear( Color( 0, 0, 0 ) );
 
   gl::draw(colorTexture,getWindowBounds()); 
-  gl::color(Color(1.0f, .0f, .0f));
+  //gl::color(Color(1.0f, .0f, .0f));
   //gl::translate(handCoords);
-  gl::drawSphere(handCoords, 10.0f, 20);
+  gl::drawSolidCircle(handCoords, 10.0f, 20);
  
 }
 

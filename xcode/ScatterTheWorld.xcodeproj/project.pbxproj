@@ -52,6 +52,7 @@
 		73534D081375B71900021BB2 /* libXnVCNITE_1_3_1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libXnVCNITE_1_3_1.dylib; path = ../resources/libXnVCNITE_1_3_1.dylib; sourceTree = SOURCE_ROOT; };
 		73534D091375B71900021BB2 /* libXnVNite_1_3_1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libXnVNite_1_3_1.dylib; path = ../resources/libXnVNite_1_3_1.dylib; sourceTree = SOURCE_ROOT; };
 		73534D341375BAF100021BB2 /* ScatterTheWorld.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; name = ScatterTheWorld.xml; path = ../resources/ScatterTheWorld.xml; sourceTree = SOURCE_ROOT; };
+		73E1619913785834005F16F4 /* ErrorChecking.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ErrorChecking.h; path = ../include/ErrorChecking.h; sourceTree = SOURCE_ROOT; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* HandTrackProject.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HandTrackProject.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -141,6 +142,7 @@
 		29B97315FDCFA39411CA2CEA /* Headers */ = {
 			isa = PBXGroup;
 			children = (
+				73E1619913785834005F16F4 /* ErrorChecking.h */,
 				32CA4F630368D1EE00C91783 /* ScatterTheWorld_Prefix.pch */,
 			);
 			name = Headers;
@@ -149,13 +151,13 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				73534D341375BAF100021BB2 /* ScatterTheWorld.xml */,
 				73534D041375B71900021BB2 /* libnimCodecs.dylib */,
 				73534D051375B71900021BB2 /* libnimMockNodes.dylib */,
 				73534D061375B71900021BB2 /* libnimRecorder.dylib */,
 				73534D071375B71900021BB2 /* libOpenNI.dylib */,
 				73534D081375B71900021BB2 /* libXnVCNITE_1_3_1.dylib */,
 				73534D091375B71900021BB2 /* libXnVNite_1_3_1.dylib */,
+				73534D341375BAF100021BB2 /* ScatterTheWorld.xml */,
 				8D1107310486CEB800E47090 /* Info.plist */,
 				00CCAF14116A9FEE008396D5 /* CinderApp.icns */,
 			);
@@ -250,7 +252,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = HandTrackProject_Prefix.pch;
+				GCC_PREFIX_HEADER = ScatterTheWorld_Prefix.pch;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
@@ -275,7 +277,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = HandTrackProject_Prefix.pch;
+				GCC_PREFIX_HEADER = ScatterTheWorld_Prefix.pch;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
