@@ -53,6 +53,8 @@
 		73534D091375B71900021BB2 /* libXnVNite_1_3_1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libXnVNite_1_3_1.dylib; path = ../resources/libXnVNite_1_3_1.dylib; sourceTree = SOURCE_ROOT; };
 		73534D341375BAF100021BB2 /* ScatterTheWorld.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; name = ScatterTheWorld.xml; path = ../resources/ScatterTheWorld.xml; sourceTree = SOURCE_ROOT; };
 		73E1619913785834005F16F4 /* ErrorChecking.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ErrorChecking.h; path = ../include/ErrorChecking.h; sourceTree = SOURCE_ROOT; };
+		73E16290137A31AC005F16F4 /* KinectImageSources.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = KinectImageSources.h; path = ../include/KinectImageSources.h; sourceTree = SOURCE_ROOT; };
+		73E162D5137AE72B005F16F4 /* ScatterTheWorldApp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ScatterTheWorldApp.h; path = ../include/ScatterTheWorldApp.h; sourceTree = SOURCE_ROOT; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* HandTrackProject.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HandTrackProject.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -142,6 +144,8 @@
 		29B97315FDCFA39411CA2CEA /* Headers */ = {
 			isa = PBXGroup;
 			children = (
+				73E162D5137AE72B005F16F4 /* ScatterTheWorldApp.h */,
+				73E16290137A31AC005F16F4 /* KinectImageSources.h */,
 				73E1619913785834005F16F4 /* ErrorChecking.h */,
 				32CA4F630368D1EE00C91783 /* ScatterTheWorld_Prefix.pch */,
 			);
@@ -298,6 +302,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = i386;
 				CINDER_PATH = ../../Cinder;
+				GCC_PREPROCESSOR_DEFINITIONS = "DEBUG=1";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
