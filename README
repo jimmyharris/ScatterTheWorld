@@ -1,0 +1,17 @@
+I should note that this is most likely going to be distributed under some BSD
+license or another (as NITE is closed and proprietary). 
+
+In the mean time: Get in touch with me before you redistribute.
+
+Cool little Visual Effect. Currently requires the Kinect.
+
+Build using Cinder (on github).
+
+OpenNI/NITE (also on github).
+
+And a tone of help from tutorial websites.
+
+The particle System is adapted from chapter five of the cinder tour.
+
+To be cleaned up tomorrow.
+
