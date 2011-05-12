@@ -67,6 +67,21 @@ ImageSourceRef KinectCursor::getColorImage()
   return ImageSourceRef( new ImageSourceKinectColor(metaData));
 }
 
+Channel8u KinectCursor::getImageChannel8u()
+{
+  xn::ImageMetaData metaData;
+  _ImageGen.GetMetaData(metaData);
+  return Channel8u(ImageSourceRef( new ImageSourceKinectColor(metaData)));
+}
+
+Channel32f KinectCursor::getImageChannel32f()
+{
+  xn::ImageMetaData metaData;
+  _ImageGen.GetMetaData(metaData);
+  return Channel32f(ImageSourceRef( new ImageSourceKinectColor(metaData)));
+}
+
+
 void KinectCursor::setup()
 {
   xn::EnumerationErrors errors;

@@ -2,6 +2,7 @@
 #include "cinder/app/App.h"
 #include "cinder/Vector.h"
 #include "cinder/ImageIo.h"
+#include "cinder/Channel.h"
 
 // OpenNI headers
 #include <XnOpenNI.h>
@@ -73,6 +74,8 @@ class KinectCursor {
     void setup();
 
     ImageSourceRef getColorImage();
+    Channel8u getImageChannel8u();
+    Channel32f getImageChannel32f();
 
 
     void setListiner(KinectListener *listiner) {
