@@ -25,6 +25,7 @@
 		73534D0E1375B71900021BB2 /* libXnVCNITE_1_3_1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 73534D081375B71900021BB2 /* libXnVCNITE_1_3_1.dylib */; };
 		73534D0F1375B71900021BB2 /* libXnVNite_1_3_1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 73534D091375B71900021BB2 /* libXnVNite_1_3_1.dylib */; };
 		73534D351375BAF100021BB2 /* ScatterTheWorld.xml in Resources */ = {isa = PBXBuildFile; fileRef = 73534D341375BAF100021BB2 /* ScatterTheWorld.xml */; };
+		73E1635D137B59E5005F16F4 /* KinectCursor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 73E1635C137B59E5005F16F4 /* KinectCursor.cpp */; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
 /* End PBXBuildFile section */
 
@@ -55,6 +56,8 @@
 		73E1619913785834005F16F4 /* ErrorChecking.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ErrorChecking.h; path = ../include/ErrorChecking.h; sourceTree = SOURCE_ROOT; };
 		73E16290137A31AC005F16F4 /* KinectImageSources.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = KinectImageSources.h; path = ../include/KinectImageSources.h; sourceTree = SOURCE_ROOT; };
 		73E162D5137AE72B005F16F4 /* ScatterTheWorldApp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ScatterTheWorldApp.h; path = ../include/ScatterTheWorldApp.h; sourceTree = SOURCE_ROOT; };
+		73E1635C137B59E5005F16F4 /* KinectCursor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = KinectCursor.cpp; path = ../src/KinectCursor.cpp; sourceTree = SOURCE_ROOT; };
+		73E1635E137B59EF005F16F4 /* KinectCursor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = KinectCursor.h; path = ../include/KinectCursor.h; sourceTree = SOURCE_ROOT; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* HandTrackProject.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HandTrackProject.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -89,6 +92,7 @@
 		080E96DDFE201D6D7F000001 /* Source */ = {
 			isa = PBXGroup;
 			children = (
+				73E1635C137B59E5005F16F4 /* KinectCursor.cpp */,
 				00BAE6590E7ED9C10018A608 /* ScatterTheWorldApp.cpp */,
 			);
 			name = Source;
@@ -144,6 +148,7 @@
 		29B97315FDCFA39411CA2CEA /* Headers */ = {
 			isa = PBXGroup;
 			children = (
+				73E1635E137B59EF005F16F4 /* KinectCursor.h */,
 				73E162D5137AE72B005F16F4 /* ScatterTheWorldApp.h */,
 				73E16290137A31AC005F16F4 /* KinectImageSources.h */,
 				73E1619913785834005F16F4 /* ErrorChecking.h */,
@@ -240,6 +245,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				00BAE65A0E7ED9C10018A608 /* ScatterTheWorldApp.cpp in Sources */,
+				73E1635D137B59E5005F16F4 /* KinectCursor.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

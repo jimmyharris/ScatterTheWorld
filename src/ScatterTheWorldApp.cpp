@@ -1,70 +1,45 @@
-#include "ScatterTheWorldApp.h"
+#include "cinder/app/AppBasic.h"
+#include "cinder/ImageIo.h"
+#include "cinder/gl/gl.h"
+#include "cinder/gl/Texture.h"
 
+#include "KinectCursor.h"
 
-ScatterTheWorldApp* gCurrentApp;
+#define WIDTH 640
+#define HEIGHT 480
 
+#define CENTER_X 320
+#define CENTER_Y 240
 
+using namespace ci;
+using namespace ci::app;
+using namespace std;
 
-//-----------------------------------------------------------------------------
-// Callbacks
-//-----------------------------------------------------------------------------
+class ScatterTheWorldApp : public AppBasic, public KinectCursor::KinectListener {
+  public:
 
-// Callback for wave detection
-void XN_CALLBACK_TYPE OnWaveCB(void* cxt)
-{
-  printf("Wave!\n");
-  ((XnVSessionManager *)CURRENT_APP->pSessionGenerator)->EndSession();
-}
+    // Cinder CallBacks.
+    void prepareSettings(Settings* settings);
+    void setup();
+    void update();
+    void draw();
+    void shutdown();
 
-void XN_CALLBACK_TYPE ScatterTheWorldApp::OnPushCB(XnFloat fVelocity, XnFloat fAngle,void* cxt)
-{
-  ((ScatterTheWorldApp *)cxt)->TestValidity();
-  ((ScatterTheWorldApp *)cxt)->_TestValidity();
-  printf("Push!\n");
-}
+    // Graphic Variables
+    gl::Texture colorTexture;
+    Vec2f handCoords;
 
-// callback for a new position of any hand
-void XN_CALLBACK_TYPE OnPointUpdate(const XnVHandPointContext* pContext, void* cxt)
-{
-  XnPoint3D perspectivePoint = pContext->ptPosition;
-  gCurrentApp->pDepthGen.ConvertRealWorldToProjective(1, &perspectivePoint, &perspectivePoint);
-  gCurrentApp->handCoords = Vec2f(perspectivePoint.X, perspectivePoint.Y);
-  #ifdef DEBUG
-    printf("%d: (%f,%f,%f) [%f]\n", pContext->nID, perspectivePoint.X, perspectivePoint.Y, perspectivePoint.Z, pContext->fTime);
-  #endif
-}
+    // Kinect Callbacks
+    KinectCursor *mKinectController;
 
-void ScatterTheWorldApp::OnFocusStartDetected(const XnChar* strFocus, const XnPoint3D& ptFocusPoint, XnFloat fProgress)
-{
-#ifdef DEBUG
-  printf("Session progress (%6.2f,%6.2f,%6.2f) - %6.2f [%s]\n", ptFocusPoint.X, ptFocusPoint.Y, ptFocusPoint.Z, fProgress,  strFocus);
-#endif
-}
+    void OnPush();
+    void OnPointUpdate(Vec3f HandPosition);
+    void OnFocusStartDetected();
+    void OnSessionStart();
+    void OnSessionEnd();
 
-// callback for session start
-void ScatterTheWorldApp::OnSessionStart(const XnPoint3D& ptFocusPoint)
-{
-#ifdef DEBUG
-  printf("Session started. Please wave (%6.2f,%6.2f,%6.2f)...\n", ptFocusPoint.X, ptFocusPoint.Y, ptFocusPoint.Z);
-#endif
-}
+};
 
-// Callback for session end
-void ScatterTheWorldApp::OnSessionEnd()
-{
-  handCoords = Vec2f(CENTER_X,CENTER_Y);
-#ifdef DEBUG
-  printf("Session ended. Please perform focus gesture to start session\n");
-#endif
-}
-  
-ImageSourceRef ScatterTheWorldApp::getColorImage()
-{
-  //Get an ImageRef from the Active MetaData
-  xn::ImageMetaData metaData;
-  pImageGen.GetMetaData(metaData);
-  return ImageSourceRef( new ImageSourceKinectColor(metaData));
-}
 
 void ScatterTheWorldApp::prepareSettings(Settings* settings)
 {
@@ -74,53 +49,23 @@ void ScatterTheWorldApp::prepareSettings(Settings* settings)
 
 void ScatterTheWorldApp::setup()
 {
-  gCurrentApp = this;
-  pSessionGenerator = NULL;
 
   handCoords = Vec2f(CENTER_X,CENTER_Y);
 
-  xn::EnumerationErrors errors;
-  XnStatus rc = pContext.InitFromXmlFile(getResourcePath("ScatterTheWorld.xml").c_str(),&errors);
-  CHECK_ERRORS(rc,errors,"InitFromXmlFile")
-  CHECK_RC(rc,"XML Config")
-
-  pSessionGenerator = new XnVSessionManager();
-  rc = ((XnVSessionManager*)pSessionGenerator)->Initialize(&pContext, "Wave", "RaiseHand");
-  CHECK_RC(rc,"Session Manager initialization")
-
-  rc = pContext.FindExistingNode(XN_NODE_TYPE_IMAGE,pImageGen);
-  CHECK_RC(rc,"Find Image Generator.")
-  rc = pContext.FindExistingNode(XN_NODE_TYPE_DEPTH,pDepthGen);
-  CHECK_RC(rc,"Find Depth Generator.")
-
-  pContext.StartGeneratingAll();
-
-  pSessionGenerator->RegisterSession((XnVSessionListener*)this);
-
-  pWaveCtrl.RegisterWave(NULL, OnWaveCB);
-  pWaveCtrl.RegisterPointUpdate(NULL, OnPointUpdate);
-  pPushCtrl.RegisterPush(this, ScatterTheWorldApp::OnPushCB);
-  pBroadcaster.AddListener(&pWaveCtrl);
-  pBroadcaster.AddListener(&pPushCtrl);
-  pSessionGenerator->AddListener(&pBroadcaster);
-
+  //Setup the kinect. (This takes a while I wish I could do this in a different thread)
+  mKinectController = new KinectCursor((KinectListener *)this);
   // Initialize our Video texture.
   gl::Texture::Format format;
 	colorTexture = gl::Texture( KINECT_WIDTH, KINECT_HEIGHT, format );
 
-  printf("Please perform focus gesture to start session\n");
-
+  printf("Please wave to start session\n");
 }
 
-void ScatterTheWorldApp::mouseDown( MouseEvent event )
-{
-}
 
 void ScatterTheWorldApp::update()
 {
-  pContext.WaitAndUpdateAll();
-  ((XnVSessionManager*)pSessionGenerator)->Update(&pContext);
-  colorTexture.update(getColorImage());
+  mKinectController->update();
+  colorTexture.update(mKinectController->getColorImage());
 }
 
 void ScatterTheWorldApp::draw()
@@ -138,9 +83,34 @@ void ScatterTheWorldApp::draw()
 
 void ScatterTheWorldApp::shutdown()
 {
-  delete pSessionGenerator;
-
-  pContext.Shutdown();
+  delete mKinectController;
 }
+
+
+void ScatterTheWorldApp::OnPush()
+{
+  printf("I pushed!\n");
+}
+void ScatterTheWorldApp::OnPointUpdate(Vec3f HandPosition)
+{
+  handCoords.x = HandPosition.x;
+  handCoords.y = HandPosition.y;
+}
+void ScatterTheWorldApp::OnFocusStartDetected()
+{
+  printf("I think I can see you!\n");
+}
+void ScatterTheWorldApp::OnSessionStart()
+{
+  printf("Hello!\n");
+}
+void ScatterTheWorldApp::OnSessionEnd()
+{
+  handCoords = Vec2f(CENTER_X,CENTER_Y);
+  printf("GoodBye!\n");
+}
+
+
+
 
 CINDER_APP_BASIC( ScatterTheWorldApp, RendererGl )
