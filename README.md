@@ -1,7 +1,13 @@
 Scattering The World
 ====================
 
-A simple interactive visual effect using Microsoft's Kinect and libcinder.
+A simple interactive visual effect using Microsoft's Kinect and Cinder.
+
+Currently the system is limited to 5000 particles.  When I get the chance, I
+intend to implement a particle system that uses location binning to limit
+particle interactions to nearest neighbor interactions. This will probably
+raise the particle capacity to 14k particles @ 30fps. GPU based techniques
+would be needed to implement a larger number of particles.
 
 Requirements
 ------------
@@ -79,7 +85,13 @@ With this step complete you should have a working build environment for this pro
         cd ~/Desktop/CinderProjects
         git clone git://github.com/jimmyharris/ScatterTheWorld
 
-To build, open the project `ScatterTheWorld/xcode/ScatterTheWorld.xcodeproj` in Xcode hit build.
+Build Instructions
+------------------
+
+  1. Open the project `ScatterTheWorld/xcode/ScatterTheWorld.xcodeproj` in Xcode.
+  2. Make sure the target is set to `Release`
+  3. Plug in your kinect.
+  4. Hit Build & Run
 
 
 Controls
@@ -109,11 +121,4 @@ Keyboard Controlls:
 
   - `s` Begin recording frames to a  movie to the desktop. The file will be named `TestMovie.mov`. Pressing `s` again will stop it.
 
-Notes
------
 
-Currently the system is limited to 5000 particles.  When I get the chance, I
-intend to implement a particle system that uses location binning to limit
-particle interactions to nearest neighbor interactions. This will probably
-raise the particle capacity to 14k particles @ 30fps. GPU based techniques
-would be needed to implement a larger number of particles.
