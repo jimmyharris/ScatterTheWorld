@@ -12,6 +12,7 @@ void XN_CALLBACK_TYPE KinectCursor::OnWaveCB(void* CurrentInstance)
 void XN_CALLBACK_TYPE KinectCursor::OnPushCB(XnFloat fVelocity, XnFloat fAngle, void* CurrentInstance)
 {
   KinectCursor *_this = ((KinectCursor*)CurrentInstance);
+  // boost::mutex::scoped_lock lock(_this->_listener_mutex);
   #ifdef DEBUG
     printf("Wave!\n");
   #endif
@@ -22,6 +23,7 @@ void XN_CALLBACK_TYPE KinectCursor::OnPushCB(XnFloat fVelocity, XnFloat fAngle, 
 void XN_CALLBACK_TYPE KinectCursor::OnPointUpdate(const XnVHandPointContext* pContext, void* CurrentInstance)
 {
   KinectCursor *_this = ((KinectCursor*)CurrentInstance);
+  // boost::mutex::scoped_lock lock(_this->_listener_mutex);
   XnPoint3D perspectivePoint = pContext->ptPosition;
   _this->_DepthGen.ConvertRealWorldToProjective(1, &perspectivePoint, &perspectivePoint);
   #ifdef DEBUG
@@ -33,6 +35,7 @@ void XN_CALLBACK_TYPE KinectCursor::OnPointUpdate(const XnVHandPointContext* pCo
 void XN_CALLBACK_TYPE KinectCursor::OnFocusStartDetected(const XnChar* strFocus, const XnPoint3D& ptFocusPoint, XnFloat fProgress, void* CurrentInstance)
 {
   KinectCursor *_this = ((KinectCursor*)CurrentInstance);
+  // boost::mutex::scoped_lock lock(_this->_listener_mutex);
 #ifdef DEBUG
   printf("Session progress (%6.2f,%6.2f,%6.2f) - %6.2f [%s]\n", ptFocusPoint.X, ptFocusPoint.Y, ptFocusPoint.Z, fProgress,  strFocus);
 #endif
@@ -43,6 +46,7 @@ void XN_CALLBACK_TYPE KinectCursor::OnFocusStartDetected(const XnChar* strFocus,
 void XN_CALLBACK_TYPE KinectCursor::OnSessionStart(const XnPoint3D& ptFocusPoint, void* CurrentInstance)
 {
   KinectCursor * _this = ((KinectCursor*)CurrentInstance);
+  // boost::mutex::scoped_lock lock(_this->_listener_mutex);
 #ifdef DEBUG
   printf("Session started. Please wave (%6.2f,%6.2f,%6.2f)...\n", ptFocusPoint.X, ptFocusPoint.Y, ptFocusPoint.Z);
 #endif
@@ -62,23 +66,20 @@ void XN_CALLBACK_TYPE KinectCursor::OnSessionEnd(void* CurrentInstance)
 ImageSourceRef KinectCursor::getColorImage()
 {
   //Get an ImageRef from the Active MetaData
-  xn::ImageMetaData metaData;
-  _ImageGen.GetMetaData(metaData);
-  return ImageSourceRef( new ImageSourceKinectColor(metaData));
+  // boost::mutex::scoped_lock lock(pImageMutex);;
+  return ImageSourceRef( _colorImage );
 }
 
 Channel8u KinectCursor::getImageChannel8u()
 {
-  xn::ImageMetaData metaData;
-  _ImageGen.GetMetaData(metaData);
-  return Channel8u(ImageSourceRef( new ImageSourceKinectColor(metaData)));
+  // boost::mutex::scoped_lock lock(pImageMutex);
+  return Channel8u(_colorImage);
 }
 
 Channel32f KinectCursor::getImageChannel32f()
 {
-  xn::ImageMetaData metaData;
-  _ImageGen.GetMetaData(metaData);
-  return Channel32f(ImageSourceRef( new ImageSourceKinectColor(metaData)));
+  // boost::mutex::scoped_lock lock(pImageMutex);
+  return Channel32f(_colorImage);
 }
 
 
@@ -99,7 +100,6 @@ void KinectCursor::setup()
   CHECK_RC(rc,"Find Depth Generator.")
 
   _Context.StartGeneratingAll();
-
  
   _SessionGenerator->RegisterSession(this, KinectCursor::OnSessionStart, KinectCursor::OnSessionEnd, KinectCursor::OnFocusStartDetected);
 
@@ -109,16 +109,27 @@ void KinectCursor::setup()
   _Broadcaster.AddListener(&_WaveCtrl);
   _Broadcaster.AddListener(&_PushCtrl);
   _SessionGenerator->AddListener(&_Broadcaster);
-
-  printf("Please perform focus gesture to start session\n");
-
+  _CursorListiner->mListinerMutex.lock();
+  _CursorListiner->notify.str("");
+  _CursorListiner->notify << "Please perform focus gesture to start session";
+  _CursorListiner->mListinerMutex.unlock();
 }
 
 
 void KinectCursor::update()
 {
   _Context.WaitAndUpdateAll();
+  
   ((XnVSessionManager*)_SessionGenerator)->Update(&_Context);
+  
+  //Load Color Image Map.
+  xn::ImageMetaData metaData;
+  _ImageGen.GetMetaData(metaData);
+
+  pImageMutex.lock();
+  _colorImage = ImageSourceRef(new ImageSourceKinectColor(metaData));
+  image_ready = true;
+  pImageMutex.unlock();
 }
 
 

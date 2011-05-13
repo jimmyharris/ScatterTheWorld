@@ -4,7 +4,7 @@
 
 #include "cinder/ImageIo.h"
 
-using namespace ci;
+using namespace cinder;
 
 class ImageSourceKinectColor : public ImageSource
 {

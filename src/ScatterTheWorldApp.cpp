@@ -3,6 +3,7 @@
 #include "cinder/gl/gl.h"
 #include "cinder/gl/Texture.h"
 #include "cinder/Perlin.h"
+#include "cinder/qtime/MovieWriter.h"
 #include "cinder/Utilities.h"
 
 #include "KinectCursor.h"
@@ -20,8 +21,8 @@ using std::stringstream;
 #define RESOLUTION 10
 #define NUM_PARTICLES_TO_SPAWN 15
 
-using namespace ci;
-using namespace ci::app;
+using namespace cinder;
+using namespace cinder::app;
 using namespace std;
 
 class ScatterTheWorldApp : public AppBasic, public KinectCursor::KinectListener {
@@ -34,20 +35,26 @@ class ScatterTheWorldApp : public AppBasic, public KinectCursor::KinectListener 
     void draw();
     void shutdown();
     void keyDown(KeyEvent event);
+    void startRecording(ImageSourceRef testFrame);
+    void stopRecording();
 
     // Graphic Variables
     gl::Texture colorTexture;
     Vec2f handCoords;
     Vec2f handVel;
     Perlin mPerlin;
+    Area mViewPort;
 
     bool mDrawParticles;
     bool mDrawImage;
+    bool mStopRecording;
+    bool mStartRecording;
+    bool mRecording;
     bool mCentralGravity,mAllowPerlin;
 
     // Kinect Callbacks
-    KinectCursor *mKinectController;
-    bool mInSession,mPushed;
+    ThreadedKinectCursor *mKinectController;
+    volatile bool mInSession,mPushed,wasInSession;
 
     void OnPush();
     void OnPointUpdate(Vec3f HandPosition);
@@ -57,13 +64,36 @@ class ScatterTheWorldApp : public AppBasic, public KinectCursor::KinectListener 
 
     //Particle System
     ParticleController mParticleController;
+  
+    // Movie Writer
+    std::string moviePath;
+    qtime::MovieWriter	mMovieWriter;
 
 };
 
+void ScatterTheWorldApp::startRecording(ImageSourceRef testFrame)
+{
+  mStartRecording = false;
+  qtime::MovieWriter::Format format;
+  format.setCodec(qtime::MovieWriter::CODEC_H264);
+  format.setQuality(.99f);
+  mMovieWriter = qtime::MovieWriter(getHomeDirectory() + "/Desktop/TestMovie.mov",getWindowWidth(),getWindowHeight(),format);
+  mRecording = true;
+}
+
+void ScatterTheWorldApp::stopRecording()
+{
+  mStopRecording = false;
+  if (mRecording) {
+    mMovieWriter.finish();
+    mRecording = false;
+  }
+}
 
 void ScatterTheWorldApp::prepareSettings(Settings* settings)
 {
-  settings->setWindowSize(WIDTH, HEIGHT);
+	settings->setWindowSize( WIDTH, HEIGHT );
+	settings->setFullScreenSize( WIDTH, HEIGHT );
   settings->setFrameRate(60.0f);
 }
 
@@ -74,7 +104,7 @@ void ScatterTheWorldApp::setup()
   handVel = Vec2f::zero();
   mInSession = false;
   //Setup the kinect. (This takes a while I wish I could do this in a different thread)
-  mKinectController = new KinectCursor((KinectListener *)this);
+  mKinectController = new ThreadedKinectCursor((KinectListener *)this);
   // Initialize our Video texture.
   gl::Texture::Format format;
   colorTexture = gl::Texture( KINECT_WIDTH, KINECT_HEIGHT, format );
@@ -84,20 +114,29 @@ void ScatterTheWorldApp::setup()
   mPushed         = false;
   mCentralGravity = false;
   mAllowPerlin    = false;
-
+  mRecording      = false;
+  mStartRecording = false;
+  mStopRecording  = false;
+  moviePath       = std::string("");
+  mKinectController->startThreadedUpdate();
+  
 }
-
 
 void ScatterTheWorldApp::update()
 {
-  mKinectController->update();
   if (mDrawImage) {
-    colorTexture.update(mKinectController->getImageChannel8u(),Area(0,0,640,480));
+    mKinectController->pImageMutex.lock();
+    colorTexture.update(mKinectController->getImageChannel8u(),Area(0,0,KINECT_WIDTH,KINECT_HEIGHT));
+    mKinectController->pImageMutex.unlock();
   }
+
+  mKinectController->pImageMutex.lock();
+  mParticleController.update(mKinectController->getImageChannel32f(),handCoords);
+  mKinectController->pImageMutex.unlock();
 
 	if( mPushed )
 		mParticleController.addParticles( NUM_PARTICLES_TO_SPAWN, handCoords, handVel );
-  
+
   mParticleController.repulseParticles();
   
   if( mCentralGravity )
@@ -105,15 +144,23 @@ void ScatterTheWorldApp::update()
   
   if( mAllowPerlin )
     mParticleController.applyPerlin( mPerlin );
-  
-  mParticleController.update(mKinectController->getImageChannel32f(),handCoords);
 
+  if (!wasInSession && mInSession) {
+    mParticleController.mParticles.clear();
+    mParticleController.mSize = 0;
+  }
+  wasInSession = mInSession;
 }
 
 void ScatterTheWorldApp::draw()
 {
+  if (mStartRecording) {
+    startRecording(copyWindowSurface());
+  }
+  gl::setMatricesWindow( WIDTH, HEIGHT );
   // clear out the window with black
   gl::clear( Color( 0, 0, 0 ) );
+ 
   if (mDrawImage) {
     gl::color( Color(1,1,1) );
     gl::draw(colorTexture,getWindowBounds()); 
@@ -124,10 +171,18 @@ void ScatterTheWorldApp::draw()
   }
   if (mInSession) {
     gl::color( Color(1,0,0) );
-    gl::drawSolidCircle(handCoords, 5.0f, 20); 
+    gl::drawSolidCircle(handCoords, 2.0f, 20); 
   }
-  gl::drawString( toString((int) getAverageFps()) + " fps", Vec2f(32.0f, 32.0f));
-  gl::drawString( toString(mParticleController.mParticles.size()) + " Particles", Vec2f(32.0f, 52.0f));
+  gl::drawString( toString(mParticleController.mParticles.size()) + " Particles", Vec2f(32.0f, 32.0f));
+  gl::drawString( notify.str(), Vec2f(32.0f, HEIGHT-32.0f));
+  if( mRecording ){
+		mMovieWriter.addFrame( copyWindowSurface() );
+    gl::drawString( "Recording...", Vec2f(WIDTH-52.0f, HEIGHT-32.0f));
+	}
+  gl::drawString( toString((int) getAverageFps()) + " fps", Vec2f(32.0f, 52.0f));
+  if (mStopRecording) {
+    stopRecording();
+  }
 
 }
 
@@ -138,7 +193,19 @@ void ScatterTheWorldApp::keyDown( KeyEvent event )
   } else if( event.getChar() == '2' ){
     mDrawParticles = ! mDrawParticles;
   }
+  
+  if (event.getChar() == 'f') {
+    setFullScreen(!isFullScreen());
+    gl::setViewport(mViewPort);
+  }
 
+  if (event.getChar() == 's') {
+    if (mRecording) {
+      mStopRecording = true;
+    } else  {
+      mStartRecording = true;
+    }
+  }
   if( event.getChar() == 'g' ){
     mCentralGravity = ! mCentralGravity;
   } else if( event.getChar() == 'p' ){
@@ -151,12 +218,11 @@ void ScatterTheWorldApp::shutdown()
   delete mKinectController;
 }
 
-
 void ScatterTheWorldApp::OnPush()
 {
   mPushed = !mPushed;
-  printf("I pushed!\n");
 }
+
 void ScatterTheWorldApp::OnPointUpdate(Vec3f HandPosition)
 {
   Vec2f newPosition = Vec2f(HandPosition.x, HandPosition.y);
@@ -164,23 +230,27 @@ void ScatterTheWorldApp::OnPointUpdate(Vec3f HandPosition)
   handCoords.x = HandPosition.x;
   handCoords.y = HandPosition.y;
 }
+
 void ScatterTheWorldApp::OnFocusStartDetected()
 {
-  printf("I think I can see you!\n");
+  notify.str("");
+  notify << "I think I can see you!";
 }
+
 void ScatterTheWorldApp::OnSessionStart()
 {
-  printf("Hello!\n");
+  notify.str("");
+  notify << "Hello!";
   mInSession = true;
 }
+
 void ScatterTheWorldApp::OnSessionEnd()
 {
   handCoords = Vec2f(CENTER_X,CENTER_Y);
-  printf("GoodBye!\n");
+  notify.str("");
+  notify << "GoodBye!";
   mInSession = false;
+  mPushed = false;
 }
-
-
-
 
 CINDER_APP_BASIC( ScatterTheWorldApp, RendererGl )

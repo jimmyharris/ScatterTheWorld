@@ -3,7 +3,7 @@
 #include "cinder/Vector.h"
 #include "ParticleController.h"
 
-using namespace ci;
+using namespace cinder;
 using std::list;
 
 ParticleController::ParticleController()
