@@ -1,5 +1,5 @@
-Scattering The World
-====================
+Scatter The World
+=================
 
 A simple interactive visual effect using Microsoft's Kinect and Cinder.
 
