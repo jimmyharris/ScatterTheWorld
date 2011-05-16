@@ -8,15 +8,15 @@
 class Particle {
  public:
 	Particle();
-	Particle( ci::Vec2f, ci::Vec2f );
+	Particle( cinder::Vec2f, cinder::Vec2f );
 	void pullToCenter();
-	void applyPerlin( const ci::Perlin &perlin );
-	void update( const ci::Channel32f &channel, const ci::Vec2i &mouseLoc );
+	void applyPerlin( const cinder::Perlin &perlin );
+	void update( const cinder::Channel32f &channel, const cinder::Vec2i &mouseLoc );
 	void draw();
 	
-	ci::Vec2f	mLoc;
-	ci::Vec2f	mVel;
-	ci::Vec2f	mAcc;
+	cinder::Vec2f	mLoc;
+	cinder::Vec2f	mVel;
+	cinder::Vec2f	mAcc;
 	
 	float		mDecay;
 	float		mRadius, mRadiusDest;
