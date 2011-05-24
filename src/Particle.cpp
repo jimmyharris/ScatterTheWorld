@@ -5,7 +5,7 @@
 
 #define WIDTH 640
 #define HEIGHT 480
-using namespace ci;
+using namespace cinder;
 
 Particle::Particle()
 {
