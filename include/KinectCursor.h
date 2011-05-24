@@ -13,13 +13,15 @@
 #include <XnVWaveDetector.h>
 #include <XnVPushDetector.h>
 #include <XnVBroadcaster.h>
+#include <sstream>
+using std::stringstream;
 
 #include "ErrorChecking.h"
 #include "KinectImageSources.h"
 
 
-using namespace ci;
-using namespace ci::app;
+using namespace cinder;
+using namespace cinder::app;
 using namespace std;
 
 #ifndef KINECTCURSOR_H
@@ -29,6 +31,7 @@ using namespace std;
 #define KINECT_WIDTH 640
 #define KINECT_HEIGHT 480
 #define AS_KINECT_CURSOR(pointer) ((KinectCursor *)pointer)
+
 
 
 class KinectCursor {
@@ -42,31 +45,26 @@ class KinectCursor {
         virtual void OnFocusStartDetected() {}
         virtual void OnSessionStart() {};
         virtual void OnSessionEnd() {};
+        std::stringstream notify;
     };
 
-
     // Constructors
-    KinectCursor(KinectListener *listiner) : _CursorListiner(listiner), _SessionGenerator(NULL)
-    {
-     setup();
-    }
-
-    KinectCursor() : _CursorListiner(NULL), _SessionGenerator(NULL)
+    KinectCursor(KinectListener *listiner) : mCursorListiner(listiner), mSessionGenerator(NULL)
     {
       setup();
     }
+
     // Destructor
-    ~KinectCursor() {
-      if(_SessionGenerator) 
+    virtual ~KinectCursor() {
+      if(mSessionGenerator) 
       {
-        delete _SessionGenerator; 
+        delete mSessionGenerator; 
       }
-      _Context.Shutdown();
+      mContext.Shutdown();
     }
 
-
     void EndSession() {
-      ((XnVSessionManager *)_SessionGenerator)->EndSession();
+      ((XnVSessionManager *)mSessionGenerator)->EndSession();
     }
 
     // Prototypes
@@ -77,24 +75,20 @@ class KinectCursor {
     Channel8u getImageChannel8u();
     Channel32f getImageChannel32f();
 
-
-    void setListiner(KinectListener *listiner) {
-      _CursorListiner = listiner;
-    }
-
-
+  protected:
+    KinectListener*  mCursorListiner;
+  
   private: 
 
-    xn::Context            _Context;
-    XnVSessionGenerator*   _SessionGenerator;
-    xn::ImageGenerator     _ImageGen;
-    xn::DepthGenerator     _DepthGen;
-    XnVBroadcaster         _Broadcaster;
-    XnVPushDetector        _PushCtrl;
-    XnVWaveDetector        _WaveCtrl;
+    xn::Context           mContext;
+    XnVSessionGenerator*  mSessionGenerator;
+    xn::ImageGenerator    mImageGen;
+    xn::DepthGenerator    mDepthGen;
+    XnVBroadcaster        mBroadcaster;
+    XnVPushDetector       mPushCtrl;
+    XnVWaveDetector       mWaveCtrl;
+    ImageSourceRef        mColorImage;
 
-
-    KinectListener*  _CursorListiner;
 
     static void XN_CALLBACK_TYPE OnWaveCB(void* currentInstance);
     static void XN_CALLBACK_TYPE OnPushCB(XnFloat fVelocity, XnFloat fAngle, void* CurrentInstance);
@@ -103,5 +97,4 @@ class KinectCursor {
     static void XN_CALLBACK_TYPE OnSessionStart(const XnPoint3D& ptFocusPoint, void* CurrentInstance);
     static void XN_CALLBACK_TYPE OnSessionEnd(void* CurrentInstance);
 };
-
-#endif /* end of include guard: SCATTERTHEWORLD_H */
+#endif /* KINECTCURSOR_H */
