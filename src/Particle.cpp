@@ -3,6 +3,8 @@
 #include "cinder/gl/gl.h"
 #include "cinder/app/AppBasic.h"
 
+#define WIDTH 640
+#define HEIGHT 480
 using namespace ci;
 
 Particle::Particle()
@@ -58,8 +60,8 @@ void Particle::update( const Channel32f &channel, const Vec2i &mouseLoc )
 	mVel *= mDecay;
 	mAcc.set( 0, 0 );
 	
-	if( mLoc.x >= 0.0f && mLoc.x <= (float)app::getWindowWidth() - 1 &&
-		mLoc.y >= 0.0f && mLoc.y <= (float)app::getWindowHeight() - 1 ){
+	if( mLoc.x >= 0.0f && mLoc.x <= WIDTH - 1 &&
+		mLoc.y >= 0.0f && mLoc.y <= HEIGHT - 1 ){
 		
 		mRadiusDest	= channel.getValue( mLoc ) * mScale + 0.5f;
 	} else {
