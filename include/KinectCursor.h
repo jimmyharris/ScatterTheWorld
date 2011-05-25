@@ -3,6 +3,7 @@
 #include "cinder/Vector.h"
 #include "cinder/ImageIo.h"
 #include "cinder/Channel.h"
+#include "cinder/Thread.h"
 
 // OpenNI headers
 #include <XnOpenNI.h>
@@ -49,10 +50,7 @@ class KinectCursor {
     };
 
     // Constructors
-    KinectCursor(KinectListener *listiner) : mCursorListiner(listiner), mSessionGenerator(NULL)
-    {
-      setup();
-    }
+    KinectCursor(KinectListener *listiner) : mCursorListiner(listiner), mSessionGenerator(NULL), mSetupDidComplete(false), mIsValid(false) {}
 
     // Destructor
     virtual ~KinectCursor() {
@@ -67,6 +65,11 @@ class KinectCursor {
       ((XnVSessionManager *)mSessionGenerator)->EndSession();
     }
 
+    void threadedSetup()
+    {
+      mSetupThread = std::shared_ptr<boost::thread>(new boost::thread(&KinectCursor::mThreadedSetup, this));
+    }
+
     // Prototypes
     void update();
     void setup();
@@ -75,20 +78,38 @@ class KinectCursor {
     Channel8u getImageChannel8u();
     Channel32f getImageChannel32f();
 
+    inline bool setupIsComplete()
+    {
+      return mSetupDidComplete;
+    }
+
+    inline bool isValid()
+    {
+      return mIsValid;
+    }
+
   protected:
     KinectListener*  mCursorListiner;
   
   private: 
 
-    xn::Context           mContext;
-    XnVSessionGenerator*  mSessionGenerator;
-    xn::ImageGenerator    mImageGen;
-    xn::DepthGenerator    mDepthGen;
-    XnVBroadcaster        mBroadcaster;
-    XnVPushDetector       mPushCtrl;
-    XnVWaveDetector       mWaveCtrl;
-    ImageSourceRef        mColorImage;
+    xn::Context                    mContext;
+    XnVSessionGenerator*           mSessionGenerator;
+    xn::ImageGenerator             mImageGen;
+    xn::DepthGenerator             mDepthGen;
+    XnVBroadcaster                 mBroadcaster;
+    XnVPushDetector                mPushCtrl;
+    XnVWaveDetector                mWaveCtrl;
+    ImageSourceRef                 mColorImage;
+    volatile bool                  mSetupDidComplete,mIsValid;
+    XnStatus                       mRc;
+    std::shared_ptr<boost::thread> mSetupThread;
 
+    void mThreadedSetup() {
+      setup();
+      mSetupDidComplete = true;
+      mIsValid = (mRc == XN_STATUS_OK);
+    }
 
     static void XN_CALLBACK_TYPE OnWaveCB(void* currentInstance);
     static void XN_CALLBACK_TYPE OnPushCB(XnFloat fVelocity, XnFloat fAngle, void* CurrentInstance);

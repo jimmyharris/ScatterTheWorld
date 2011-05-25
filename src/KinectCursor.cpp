@@ -75,22 +75,21 @@ Channel32f KinectCursor::getImageChannel32f()
   return Channel32f(mColorImage);
 }
 
-
 void KinectCursor::setup()
 {
   xn::EnumerationErrors errors;
-  XnStatus rc = mContext.InitFromXmlFile(App::getResourcePath("ScatterTheWorld.xml").c_str(),&errors);
-  CHECK_ERRORS(rc,errors,"InitFromXmlFile")
-  CHECK_RC(rc,"XML Config")
+  mRc = mContext.InitFromXmlFile(App::getResourcePath("ScatterTheWorld.xml").c_str(),&errors);
+  CHECK_ERRORS_AND_RETURN(mRc,errors,"InitFromXmlFile")
+  CHECK_RC_AND_RETURN(mRc,"XML Config")
 
   mSessionGenerator = new XnVSessionManager();
-  rc = ((XnVSessionManager*)mSessionGenerator)->Initialize(&mContext, "Wave", "RaiseHand");
-  CHECK_RC(rc,"Session Manager initialization")
+  mRc = ((XnVSessionManager*)mSessionGenerator)->Initialize(&mContext, "Wave", "RaiseHand");
+  CHECK_RC_AND_RETURN(mRc,"Session Manager initialization")
 
-  rc = mContext.FindExistingNode(XN_NODE_TYPE_IMAGE,mImageGen);
-  CHECK_RC(rc,"Find Image Generator.")
-  rc = mContext.FindExistingNode(XN_NODE_TYPE_DEPTH,mDepthGen);
-  CHECK_RC(rc,"Find Depth Generator.")
+  mRc = mContext.FindExistingNode(XN_NODE_TYPE_IMAGE,mImageGen);
+  CHECK_RC_AND_RETURN(mRc,"Find Image Generator.")
+  mRc = mContext.FindExistingNode(XN_NODE_TYPE_DEPTH,mDepthGen);
+  CHECK_RC_AND_RETURN(mRc,"Find Depth Generator.")
 
   mContext.StartGeneratingAll();
  
@@ -102,10 +101,9 @@ void KinectCursor::setup()
   mBroadcaster.AddListener(&mWaveCtrl);
   mBroadcaster.AddListener(&mPushCtrl);
   mSessionGenerator->AddListener(&mBroadcaster);
-
+  mCursorListiner->notify.str("");
   mCursorListiner->notify << "Please perform focus gesture to start session";
 }
-
 
 void KinectCursor::update()
 {

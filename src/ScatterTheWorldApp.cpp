@@ -110,6 +110,7 @@ void ScatterTheWorldApp::setup()
   mInSession = false;
   //Setup the kinect. (This takes a while I wish I could do this in a different thread)
   mKinectController = new KinectCursor((KinectListener *)this);
+  mKinectController->threadedSetup();
   // Initialize our Video texture.
   gl::Texture::Format format;
   colorTexture = gl::Texture( KINECT_WIDTH, KINECT_HEIGHT, format );
@@ -118,7 +119,6 @@ void ScatterTheWorldApp::setup()
   csaaFormat.setSamples(4);
   csaaFormat.setCoverageSamples(8);
   kinectFrame = gl::Fbo(KINECT_WIDTH, KINECT_HEIGHT, csaaFormat);
-  //kinectFrame = gl::Fbo(KINECT_WIDTH, KINECT_HEIGHT);
 
   mDrawParticles  = true;
   mDrawImage      = false;
@@ -129,59 +129,63 @@ void ScatterTheWorldApp::setup()
   mStartRecording = false;
   mStopRecording  = false;
   moviePath       = std::string("");
+  notify.str("");
+  notify << "Waiting for Kinect...";
 }
 
 void ScatterTheWorldApp::update()
 {
-  mKinectController->update();
-  if (mDrawImage) {
-    colorTexture.update(mKinectController->getImageChannel8u(),Area(0,0,KINECT_WIDTH,KINECT_HEIGHT));
+  if (mKinectController->setupIsComplete() && mKinectController->isValid()) {
+    mKinectController->update();
+    if (mDrawImage) {
+      colorTexture.update(mKinectController->getImageChannel8u(),Area(0,0,KINECT_WIDTH,KINECT_HEIGHT));
+    }
+
+    mParticleController.update(mKinectController->getImageChannel32f(),handCoords);
+
+    if( mPushed )
+      mParticleController.addParticles( NUM_PARTICLES_TO_SPAWN, handCoords, handVel );
+
+    mParticleController.repulseParticles();
+
+    if( mCentralGravity )
+      mParticleController.pullToCenter(kinectFrame.getSize()/2);
+
+    if( mAllowPerlin )
+      mParticleController.applyPerlin( mPerlin );
+
+    if (!wasInSession && mInSession) {
+      mParticleController.mParticles.clear();
+      mParticleController.mSize = 0;
+    }
+    wasInSession = mInSession;
+    drawFbo();
   }
-
-  mParticleController.update(mKinectController->getImageChannel32f(),handCoords);
-
-	if( mPushed )
-		mParticleController.addParticles( NUM_PARTICLES_TO_SPAWN, handCoords, handVel );
-
-  mParticleController.repulseParticles();
-  
-  if( mCentralGravity )
-    mParticleController.pullToCenter(kinectFrame.getSize()/2);
-  
-  if( mAllowPerlin )
-    mParticleController.applyPerlin( mPerlin );
-
-  if (!wasInSession && mInSession) {
-    mParticleController.mParticles.clear();
-    mParticleController.mSize = 0;
-  }
-  wasInSession = mInSession;
 }
 
 void ScatterTheWorldApp::drawFbo()
 {
-  kinectFrame.bindFramebuffer();
-  gl::setMatricesWindow( kinectFrame.getSize(),false);
-  gl::clear( Color( 0, 0, 0 ) );
-  if (mDrawImage) {
-    gl::color( Color(1,1,1) );
-    gl::draw(colorTexture,kinectFrame.getBounds()); 
-  }
-  if (mDrawParticles) {
-    gl::color( Color(1,1,1) );
-    mParticleController.draw();
-  }
-  if (mInSession) {
-    gl::color( Color(1,0,0) );
-    gl::drawSolidCircle(handCoords, 2.0f, 20);
-    gl::color( Color(1,1,1) );
-  }
-  kinectFrame.unbindFramebuffer();
+    kinectFrame.bindFramebuffer();
+    gl::setMatricesWindow( kinectFrame.getSize(),false);
+    gl::clear( Color( 0, 0, 0 ) );
+    if (mDrawImage) {
+      gl::color( Color(1,1,1) );
+      gl::draw(colorTexture,kinectFrame.getBounds()); 
+    }
+    if (mDrawParticles) {
+      gl::color( Color(1,1,1) );
+      mParticleController.draw();
+    }
+    if (mInSession) {
+      gl::color( Color(1,0,0) );
+      gl::drawSolidCircle(handCoords, 2.0f, 20);
+      gl::color( Color(1,1,1) );
+    }
+    kinectFrame.unbindFramebuffer();
 }
 
 void ScatterTheWorldApp::draw()
 {
-  drawFbo();
   if (mStartRecording) {
     startRecording(copyWindowSurface());
   }
@@ -189,7 +193,9 @@ void ScatterTheWorldApp::draw()
   gl::clear( Color( 0, 0, 0 ) );
   gl::setMatricesWindow( getWindowSize(),true);
   // gl::draw(kinectFrame.getTexture(), Rectf(0.0f,0.0f, getWindowWidth(),getWindowHeight()));
-  gl::draw(kinectFrame.getTexture(), getWindowBounds());
+  if (mKinectController->setupIsComplete() && mKinectController->isValid()) {
+    gl::draw(kinectFrame.getTexture(), getWindowBounds());
+  }
   gl::drawString( toString(mParticleController.mParticles.size()) + " Particles", Vec2f(32.0f, 32.0f));
   gl::drawString( notify.str(), Vec2f(32.0f, getWindowHeight()-32.0f));
   if( mRecording ){
