@@ -36,10 +36,10 @@ void ParticleController::repulseParticles()
 	}
 }
 
-void ParticleController::pullToCenter()
+void ParticleController::pullToCenter(Vec2i center)
 {
 	for( list<Particle>::iterator p = mParticles.begin(); p != mParticles.end(); ++p ){
-		p->pullToCenter();
+		p->pullToCenter(center);
 	}
 }
 

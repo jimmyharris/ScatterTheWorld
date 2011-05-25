@@ -27,9 +27,9 @@ Particle::Particle( Vec2f loc, Vec2f vel )
 	mIsDead			= false;
 }
 
-void Particle::pullToCenter()
+void Particle::pullToCenter(Vec2i center)
 {
-	Vec2f dirToCenter = mLoc - app::getWindowCenter();
+	Vec2f dirToCenter = mLoc - center;
 	mVel -= dirToCenter * mMass * 0.025f;
 }	
 

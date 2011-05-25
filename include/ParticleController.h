@@ -1,4 +1,5 @@
 #pragma once
+#include "cinder/Cinder.h"
 #include "cinder/Channel.h"
 #include "Particle.h"
 #include "cinder/Perlin.h"
@@ -10,7 +11,7 @@ class ParticleController {
  public:
 	ParticleController();
 	void repulseParticles();
-	void pullToCenter();
+	void pullToCenter(ci::Vec2i center);
 	void applyPerlin( const ci::Perlin &perlin );
 	void update( const ci::Channel32f &channel, const ci::Vec2i &mouseLoc );
 	void draw();

@@ -9,7 +9,7 @@ class Particle {
  public:
 	Particle();
 	Particle( cinder::Vec2f, cinder::Vec2f );
-	void pullToCenter();
+	void pullToCenter(cinder::Vec2i center);
 	void applyPerlin( const cinder::Perlin &perlin );
 	void update( const cinder::Channel32f &channel, const cinder::Vec2i &mouseLoc );
 	void draw();

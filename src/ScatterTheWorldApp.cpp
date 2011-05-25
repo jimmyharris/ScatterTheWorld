@@ -2,6 +2,7 @@
 #include "cinder/ImageIo.h"
 #include "cinder/gl/gl.h"
 #include "cinder/gl/Texture.h"
+#include "cinder/gl/Fbo.h"
 #include "cinder/Perlin.h"
 #include "cinder/qtime/MovieWriter.h"
 #include "cinder/Utilities.h"
@@ -69,6 +70,10 @@ class ScatterTheWorldApp : public AppBasic, public KinectCursor::KinectListener 
     std::string moviePath;
     qtime::MovieWriter	mMovieWriter;
 
+    // Fbo Support
+    gl::Fbo kinectFrame;
+    void drawFbo();
+    Vec2f getFboCenter();
 };
 
 void ScatterTheWorldApp::startRecording(ImageSourceRef testFrame)
@@ -93,8 +98,8 @@ void ScatterTheWorldApp::stopRecording()
 void ScatterTheWorldApp::prepareSettings(Settings* settings)
 {
 	settings->setWindowSize( WIDTH, HEIGHT );
-	settings->setFullScreenSize( WIDTH, HEIGHT );
   settings->setFrameRate(60.0f);
+  // settings->setFullScreen();
 }
 
 void ScatterTheWorldApp::setup()
@@ -108,6 +113,12 @@ void ScatterTheWorldApp::setup()
   // Initialize our Video texture.
   gl::Texture::Format format;
   colorTexture = gl::Texture( KINECT_WIDTH, KINECT_HEIGHT, format );
+
+  gl::Fbo::Format csaaFormat;
+  csaaFormat.setSamples(4);
+  csaaFormat.setCoverageSamples(8);
+  kinectFrame = gl::Fbo(KINECT_WIDTH, KINECT_HEIGHT, csaaFormat);
+  //kinectFrame = gl::Fbo(KINECT_WIDTH, KINECT_HEIGHT);
 
   mDrawParticles  = true;
   mDrawImage      = false;
@@ -135,7 +146,7 @@ void ScatterTheWorldApp::update()
   mParticleController.repulseParticles();
   
   if( mCentralGravity )
-    mParticleController.pullToCenter();
+    mParticleController.pullToCenter(kinectFrame.getSize()/2);
   
   if( mAllowPerlin )
     mParticleController.applyPerlin( mPerlin );
@@ -147,18 +158,14 @@ void ScatterTheWorldApp::update()
   wasInSession = mInSession;
 }
 
-void ScatterTheWorldApp::draw()
+void ScatterTheWorldApp::drawFbo()
 {
-  if (mStartRecording) {
-    startRecording(copyWindowSurface());
-  }
-  gl::setMatricesWindow( WIDTH, HEIGHT );
-  // clear out the window with black
+  kinectFrame.bindFramebuffer();
+  gl::setMatricesWindow( kinectFrame.getSize(),false);
   gl::clear( Color( 0, 0, 0 ) );
- 
   if (mDrawImage) {
     gl::color( Color(1,1,1) );
-    gl::draw(colorTexture,getWindowBounds()); 
+    gl::draw(colorTexture,kinectFrame.getBounds()); 
   }
   if (mDrawParticles) {
     gl::color( Color(1,1,1) );
@@ -166,13 +173,28 @@ void ScatterTheWorldApp::draw()
   }
   if (mInSession) {
     gl::color( Color(1,0,0) );
-    gl::drawSolidCircle(handCoords, 2.0f, 20); 
+    gl::drawSolidCircle(handCoords, 2.0f, 20);
+    gl::color( Color(1,1,1) );
   }
+  kinectFrame.unbindFramebuffer();
+}
+
+void ScatterTheWorldApp::draw()
+{
+  drawFbo();
+  if (mStartRecording) {
+    startRecording(copyWindowSurface());
+  }
+  // clear out the window with black
+  gl::clear( Color( 0, 0, 0 ) );
+  gl::setMatricesWindow( getWindowSize(),true);
+  // gl::draw(kinectFrame.getTexture(), Rectf(0.0f,0.0f, getWindowWidth(),getWindowHeight()));
+  gl::draw(kinectFrame.getTexture(), getWindowBounds());
   gl::drawString( toString(mParticleController.mParticles.size()) + " Particles", Vec2f(32.0f, 32.0f));
-  gl::drawString( notify.str(), Vec2f(32.0f, HEIGHT-32.0f));
+  gl::drawString( notify.str(), Vec2f(32.0f, getWindowHeight()-32.0f));
   if( mRecording ){
 		mMovieWriter.addFrame( copyWindowSurface() );
-    gl::drawString( "Recording...", Vec2f(WIDTH-52.0f, HEIGHT-32.0f));
+    gl::drawString( "Recording...", Vec2f(getWindowWidth()-52.0f, getWindowHeight()-32.0f));
 	}
   gl::drawString( toString((int) getAverageFps()) + " fps", Vec2f(32.0f, 52.0f));
   if (mStopRecording) {
@@ -191,7 +213,6 @@ void ScatterTheWorldApp::keyDown( KeyEvent event )
   
   if (event.getChar() == 'f') {
     setFullScreen(!isFullScreen());
-    gl::setViewport(mViewPort);
   }
 
   if (event.getChar() == 's') {
