@@ -2,6 +2,7 @@
 #include "cinder/Rand.h"
 #include "cinder/gl/gl.h"
 #include "cinder/app/AppBasic.h"
+
 #define WIDTH 640
 #define HEIGHT 480
 using namespace cinder;
@@ -82,6 +83,7 @@ void Particle::draw()
 	gl::vertex( mLoc );
 	glEnd();
 }
+
 
 
 

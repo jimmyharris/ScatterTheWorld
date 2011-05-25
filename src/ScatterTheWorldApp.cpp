@@ -53,7 +53,7 @@ class ScatterTheWorldApp : public AppBasic, public KinectCursor::KinectListener 
     bool mCentralGravity,mAllowPerlin;
 
     // Kinect Callbacks
-    ThreadedKinectCursor *mKinectController;
+    KinectCursor *mKinectController;
     volatile bool mInSession,mPushed,wasInSession;
 
     void OnPush();
@@ -104,7 +104,7 @@ void ScatterTheWorldApp::setup()
   handVel = Vec2f::zero();
   mInSession = false;
   //Setup the kinect. (This takes a while I wish I could do this in a different thread)
-  mKinectController = new ThreadedKinectCursor((KinectListener *)this);
+  mKinectController = new KinectCursor((KinectListener *)this);
   // Initialize our Video texture.
   gl::Texture::Format format;
   colorTexture = gl::Texture( KINECT_WIDTH, KINECT_HEIGHT, format );
@@ -118,21 +118,16 @@ void ScatterTheWorldApp::setup()
   mStartRecording = false;
   mStopRecording  = false;
   moviePath       = std::string("");
-  mKinectController->startThreadedUpdate();
-  
 }
 
 void ScatterTheWorldApp::update()
 {
+  mKinectController->update();
   if (mDrawImage) {
-    mKinectController->pImageMutex.lock();
     colorTexture.update(mKinectController->getImageChannel8u(),Area(0,0,KINECT_WIDTH,KINECT_HEIGHT));
-    mKinectController->pImageMutex.unlock();
   }
 
-  mKinectController->pImageMutex.lock();
   mParticleController.update(mKinectController->getImageChannel32f(),handCoords);
-  mKinectController->pImageMutex.unlock();
 
 	if( mPushed )
 		mParticleController.addParticles( NUM_PARTICLES_TO_SPAWN, handCoords, handVel );
@@ -254,3 +249,4 @@ void ScatterTheWorldApp::OnSessionEnd()
 }
 
 CINDER_APP_BASIC( ScatterTheWorldApp, RendererGl )
+

@@ -3,7 +3,6 @@
 #include "cinder/Vector.h"
 #include "cinder/ImageIo.h"
 #include "cinder/Channel.h"
-#include "cinder/Thread.h"
 
 // OpenNI headers
 #include <XnOpenNI.h>
@@ -46,55 +45,49 @@ class KinectCursor {
         virtual void OnFocusStartDetected() {}
         virtual void OnSessionStart() {};
         virtual void OnSessionEnd() {};
-        std::mutex mListinerMutex;
         std::stringstream notify;
     };
 
-
     // Constructors
-    KinectCursor(KinectListener *listiner) : _CursorListiner(listiner), _SessionGenerator(NULL)
+    KinectCursor(KinectListener *listiner) : mCursorListiner(listiner), mSessionGenerator(NULL)
     {
       setup();
     }
 
     // Destructor
     virtual ~KinectCursor() {
-      if(_SessionGenerator) 
+      if(mSessionGenerator) 
       {
-        delete _SessionGenerator; 
+        delete mSessionGenerator; 
       }
-      _Context.Shutdown();
+      mContext.Shutdown();
     }
 
     void EndSession() {
-      ((XnVSessionManager *)_SessionGenerator)->EndSession();
+      ((XnVSessionManager *)mSessionGenerator)->EndSession();
     }
 
     // Prototypes
     void update();
     void setup();
-    volatile bool         image_ready;
 
     ImageSourceRef getColorImage();
     Channel8u getImageChannel8u();
     Channel32f getImageChannel32f();
-    std::mutex            pImageMutex;
 
   protected:
-    KinectListener*  _CursorListiner;
-    
+    KinectListener*  mCursorListiner;
   
   private: 
 
-    xn::Context           _Context;
-    XnVSessionGenerator*  _SessionGenerator;
-    xn::ImageGenerator    _ImageGen;
-    xn::DepthGenerator    _DepthGen;
-    XnVBroadcaster        _Broadcaster;
-    XnVPushDetector       _PushCtrl;
-    XnVWaveDetector       _WaveCtrl;
-    std::mutex            _listener_mutex;
-    ImageSourceRef        _colorImage;
+    xn::Context           mContext;
+    XnVSessionGenerator*  mSessionGenerator;
+    xn::ImageGenerator    mImageGen;
+    xn::DepthGenerator    mDepthGen;
+    XnVBroadcaster        mBroadcaster;
+    XnVPushDetector       mPushCtrl;
+    XnVWaveDetector       mWaveCtrl;
+    ImageSourceRef        mColorImage;
 
 
     static void XN_CALLBACK_TYPE OnWaveCB(void* currentInstance);
@@ -104,30 +97,5 @@ class KinectCursor {
     static void XN_CALLBACK_TYPE OnSessionStart(const XnPoint3D& ptFocusPoint, void* CurrentInstance);
     static void XN_CALLBACK_TYPE OnSessionEnd(void* CurrentInstance);
 };
+#endif /* KINECTCURSOR_H */
 
-class ThreadedKinectCursor : public KinectCursor {
-public:
-  ThreadedKinectCursor(KinectListener *listiner): _shutDown(false), KinectCursor(listiner)
-  {
-  }
-  ~ThreadedKinectCursor()
-  {
-    _shutDown = true;
-    _thread->join();
-  }
-  void startThreadedUpdate()
-  {
-    _thread = std::shared_ptr<boost::thread>(new boost::thread(&ThreadedKinectCursor::_threadedUpdate, this));
-  }
-private:
-  std::shared_ptr<boost::thread> _thread;
-  volatile bool _shutDown;
-  void _threadedUpdate()
-  {
-    while (!_shutDown) {
-      update();
-    }
-  }
-};
-
-#endif /* end of include guard: SCATTERTHEWORLD_H */
